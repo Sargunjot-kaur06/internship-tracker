@@ -4,28 +4,37 @@ import NavBar from "../components/NavBar";
 import ApplicationCard from "../components/ApplicationCard";
 
 function Dashboard() {
+  const defaultApplications = [
+    {
+      id: 1,
+      company: "Google",
+      role: "Frontend Intern",
+      status: "Applied",
+    },
+    {
+      id: 2,
+      company: "Microsoft",
+      role: "SDE Intern",
+      status: "Interview",
+    },
+  ];
 
   // STATE: stores all applications (LOCAL STORAGE)
   const [applications, setApplications] = useState(() => {
-    const savedApplications = 
-      localStorage.getItem("applications");
+    const savedApplications = localStorage.getItem("applications");
 
-    return savedApplications
-      ? JSON.parse(savedApplications)
-      :[
-        {
-          id: 1,
-          company: "Google",
-          role: "Frontend Intern",
-          status: "Applied",
-        },
-        {
-          id: 2,
-          company: "Microsoft",
-          role: "SDE Intern",
-          status: "Interview",
-        },
-      ];
+    if (!savedApplications) {
+      return defaultApplications;
+    }
+
+    try {
+      const parsedApplications = JSON.parse(savedApplications);
+      return Array.isArray(parsedApplications)
+        ? parsedApplications
+        : defaultApplications;
+    } catch {
+      return defaultApplications;
+    }
   });
 
   useEffect(() => {
@@ -154,7 +163,13 @@ function Dashboard() {
           <option value="Selected">Selected</option>
         </select>
         
-        {filteredApplications.map((app) => (
+        {filteredApplications.length === 0 ? (
+          <div className="empty-state">
+            <h3>No applications found</h3>
+            <p>Add your first intership application!</p>
+          </div>
+        ):(
+          filteredApplications.map((app) => (
           <ApplicationCard
             key={app.id}
             id={app.id}
@@ -164,7 +179,7 @@ function Dashboard() {
             deleteApplication={deleteApplication}
             updateStatus={updateStatus}
           />
-        ))}
+        )))}
       </div>
     </>
   );

@@ -12,7 +12,9 @@ function ApplicationCard({
 
       <p>{role}</p>
 
-      <p>Status: {status}</p>
+      <p className={`status ${status.toLowerCase()}`}>
+        Status: {status}
+      </p>
 
       <button
         onClick={() => deleteApplication(id)}
