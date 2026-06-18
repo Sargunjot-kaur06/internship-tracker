@@ -20,22 +20,23 @@ function Dashboard() {
   ];
 
   // STATE: stores all applications (LOCAL STORAGE)
-  const [applications, setApplications] = useState(() => {
-    const savedApplications = localStorage.getItem("applications");
+  const [applications, setApplications] = useState([]);
+  // const [applications, setApplications] = useState(() => {
+  //   const savedApplications = localStorage.getItem("applications");
 
-    if (!savedApplications) {
-      return defaultApplications;
-    }
+  //   if (!savedApplications) {
+  //     return defaultApplications;
+  //   }
 
-    try {
-      const parsedApplications = JSON.parse(savedApplications);
-      return Array.isArray(parsedApplications)
-        ? parsedApplications
-        : defaultApplications;
-    } catch {
-      return defaultApplications;
-    }
-  });
+  //   try {
+  //     const parsedApplications = JSON.parse(savedApplications);
+  //     return Array.isArray(parsedApplications)
+  //       ? parsedApplications
+  //       : defaultApplications;
+  //   } catch {
+  //     return defaultApplications;
+  //   }
+  // });
 
   useEffect(() => {
     localStorage.setItem(
@@ -44,42 +45,106 @@ function Dashboard() {
     );
   }, [applications]);
 
+  useEffect(() => {
+  fetch("http://localhost:5000/applications")
+    .then((response) => response.json())
+    .then((data) => {
+      setApplications(data);
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+}, []);
+
   // ADD APPLICATION FUNCTION
-  const addApplication = (newApplication) => {
-    setApplications([
-      ...applications,
-      newApplication,
+  const addApplication = async (newApplication) => {
+  try {
+    const response = await fetch(
+      "http://localhost:5000/applications",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newApplication),
+      }
+    );
+
+    const data = await response.json();
+
+    setApplications((prev) => [
+      ...prev,
+      data.application,
     ]);
-  };  
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   // DELETE APPLICATION FUNCTION
-  const deleteApplication = (id) => {
-    setApplications(
-      applications.filter((app) => app.id !== id)
+  const deleteApplication = async (id) => {
+  try {
+    await fetch(
+      `http://localhost:5000/applications/${id}`,
+      {
+        method: "DELETE",
+      }
     );
-  };
+
+    setApplications(
+      applications.filter(
+        (app) => app.id !== id
+      )
+    );
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 
   // UPDATE FUNCTION 
-  const updateStatus = (id) => {
-  setApplications(
-    applications.map((app) => {
-      if (app.id === id) {
-        if (app.status === "Applied") {
-          return { ...app, status: "Interview" };
-        }
+  const updateStatus = async (id) => {
+  const application = applications.find(
+    (app) => app.id === id
+  );
 
-        if (app.status === "Interview") {
-          return { ...app, status: "Selected" };
-        }
+  if (!application) return;
 
-        return app;
+  let newStatus = application.status;
+
+  if (application.status === "Applied") {
+    newStatus = "Interview";
+  } else if (application.status === "Interview") {
+    newStatus = "Selected";
+  } else {
+    return;
+  }
+
+  try {
+    await fetch(
+      `http://localhost:5000/applications/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
       }
-
-      return app;
-     })
     );
-  };
+
+    setApplications(
+      applications.map((app) =>
+        app.id === id
+          ? { ...app, status: newStatus }
+          : app
+      )
+    );
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const totalApplications = applications.length;
 
